@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Demonstration of ChatGPT API in a Python Flask Application. A Skolo Online course.">
+
+  <title>FinGuru: ChatBot</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    body {
+      font-family: 'Manrope', sans-serif;
+      background-color: #f8f9fa;
+      color: #212529;
+      margin: 0;
+      padding-top: 56px; /* Adjust based on the height of the navbar */
+    }
+
+    .navbar-brand img {
+      height: 30px;
+    }
+
+    .hero-section {
+      background-color: #101626;
+      color: #fff;
+      padding: 60px 0;
+      text-align: center;
+    }
+
+    .hero-section h1 {
+      font-size: 3rem;
+      font-weight: 600;
+    }
+
+    .hero-section p {
+      font-size: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero-section .btn-primary {
+      font-size: 1rem;
+      padding: 0.75rem 1.5rem;
+    }
+
+    .section-title {
+      font-size: 2rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+
+    .card {
+      margin-bottom: 1.5rem;
+    }
+
+    .card img {
+      height: 200px;
+      object-fit: cover;
+    }
+
+    .chat-container {
+      position: fixed;
+      bottom: 0;
+      right: 0;
+      margin: 20px;
+      max-width: 500px;
+      width: 100%;
+      z-index: 1000;
+      display: none;
+    }
+
+    .chat-box {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .chat-header {
+      background: #101626;
+      color: #fff;
+      padding: 10px 20px;
+      border-bottom: 1px solid #ddd;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .chat-header img {
+      border-radius: 50%;
+      margin-right: 10px;
+    }
+
+    .chat-messages {
+      padding: 20px;
+      height: 400px;
+      overflow-y: auto;
+    }
+
+    .chat-input {
+      display: flex;
+      border-top: 1px solid #ddd;
+      padding: 10px;
+    }
+
+    .chat-input input {
+      border: none;
+      padding: 10px;
+      flex: 1;
+      border-radius: 20px;
+      background: #f1f1f1;
+      margin-right: 10px;
+    }
+
+    .chat-input button {
+      background: #007bff;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 20px;
+    }
+
+    .chat-message {
+      margin-bottom: 10px;
+    }
+
+    .chat-message-user {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .chat-message-bot {
+      display: flex;
+      justify-content: flex-start;
+    }
+
+    .chat-message p {
+      display: inline-block;
+      padding: 10px;
+      border-radius: 10px;
+      max-width: 80%;
+      white-space: pre-wrap;
+    }
+
+    .chat-message-user p {
+      background: #007bff;
+      color: #fff;
+      text-align: right;
+    }
+
+    .chat-message-bot p {
+      background: #f1f1f1;
+      color: #000;
+    }
+
+    .close-btn {
+      background: #fff;
+      border: none;
+      color: #000;
+      font-size: 1.5rem;
+      cursor: pointer;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .open-chat-btn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #007bff;
+      border: none;
+      color: #fff;
+      font-size: 1.5rem;
+      cursor: pointer;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1001;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top">
+    <div class="container">
+      <a class="navbar-brand" href="#">
+         FinGuru
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item">
+            <a class="nav-link" href="#">Expense Tracker</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">Budget Planner</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">Home</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">Gamified Learning</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container py-5">
+    <section>
+      <h2 class="section-title">Educational Loans</h2>
+      <div class="row">
+        <div class="col-md-4">
+          <div class="card">
+            <img src="../static/eduLoan.png" class="card-img-top" alt="Bank of Education">
+            <div class="card-body">
+              <h5 class="card-title">Bank of Education</h5>
+              <p class="card-text">Interest Rate: 5%</p>
+              <a href="#" class="btn btn-primary">Learn More</a>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card">
+            <img src="../static/eduLoan2.png" class="card-img-top" alt="Future Scholars Bank">
+            <div class="card-body">
+              <h5 class="card-title">Future Scholars Bank</h5>
+              <p class="card-text">Interest Rate: 4.5%</p>
+              <a href="#" class="btn btn-primary">Learn More</a>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card">
+            <img src="../static/eduLoan3.png" class="card-img-top" alt="Student Success Loans">
+            <div class="card-body">
+              <h5 class="card-title">Student Success Loans</h5>
+              <p class="card-text">Interest Rate: 6%</p>
+              <a href="#" class="btn btn-primary">Learn More</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="mt-5">
+      <h2 class="section-title">Scholarships</h2>
+      <div class="row">
+        <div class="col-md-4">
+          <div class="card">
+            <img src="../static/scholar1.png" class="card-img-top" alt="Fulbright">
+            <div class="card-body">
+              <h5 class="card-title">Fulbright</h5>
+              <p class="card-text">US citizens only. Supports study/research abroad.</p>
+              <a href="#" class="btn btn-primary">Learn More</a>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card">
+            <img src="../static/scholar2.png" class="card-img-top" alt="Chevening">
+            <div class="card-body">
+              <h5 class="card-title">Chevening</h5>
+              <p class="card-text">UK Government scholarship for international students.</p>
+              <a href="#" class="btn btn-primary">Learn More</a>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card">
+            <img src="../static/scholar3.png" class="card-img-top" alt="Erasmus Mundus">
+            <div class="card-body">
+              <h5 class="card-title">Erasmus Mundus</h5>
+              <p class="card-text">EU-funded program for study in multiple countries.</p>
+              <a href="#" class="btn btn-primary">Learn More</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="mt-5">
+      <h2 class="section-title">Study Abroad</h2>
+      <div class="row">
+        <div class="col-md-4">
+          <div class="card">
+            <img src="../static/study1.png" class="card-img-top" alt="Erasmus+">
+            <div class="card-body">
+              <h5 class="card-title">Erasmus+</h5>
+              <p class="card-text">Location: Europe<br>Duration: 6 months</p>
+              <a href="#" class="btn btn-primary">Learn More</a>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card">
+            <img src="../static/study2.png" class="card-img-top" alt="Fulbright">
+            <div class="card-body">
+              <h5 class="card-title">Fulbright</h5>
+              <p class="card-text">Location: USA<br>Duration: 1 year</p>
+              <a href="#" class="btn btn-primary">Learn More</a>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card">
+            <img src="../static/study3.png" class="card-img-top" alt="DAAD">
+            <div class="card-body">
+              <h5 class="card-title">DAAD</h5>
+              <p class="card-text">Location: Germany<br>Duration: 10 months</p>
+              <a href="#" class="btn btn-primary">Learn More</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Chat Interface -->
+  <div class="chat-container" id="chat-container">
+    <div class="chat-box">
+      <div class="chat-header">
+        <div>
+          <h3 class="mb-0">Chat with us!</h3>
+          <p class="mb-0">We are here to help you.</p>
+        </div>
+        <button class="close-btn" id="close-btn"><i class="fas fa-times"></i></button>
+      </div>
+      <div id="chat-messages" class="chat-messages"></div>
+      <div class="chat-input">
+        <input type="text" id="chat-input" placeholder="Type a message...">
+        <button id="gpt-button">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <button class="open-chat-btn" id="open-chat-btn"><i class="fas fa-comments"></i></button>
+
+  <script src="https://code.jquery.com/jquery-3.6.3.min.js"
+    integrity="sha256-pvPw+upLPUjgMXY0G+8O0xUf+/Im1MZjXxxgOcBQBXU=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN" crossorigin="anonymous">
+  </script>
+
+  <script>
+    $("#gpt-button").click(function () {
+      var question = $("#chat-input").val();
+      let html_data = '';
+      html_data += `<div class="chat-message chat-message-user">
+        <div class="d-flex gap-3 py-3">
+          <p class="mb-0">${question}</p>
+        </div>
+      </div>`;
+
+      $("#chat-input").val("");
+
+      $("#chat-messages").append(html_data);
+      $("#chat-messages").scrollTop($("#chat-messages")[0].scrollHeight);
+
+      $.ajax({
+        type: "POST",
+        url: "/",
+        data: {
+          'prompt': question
+        },
+        success: function (data) {
+          let gpt_data = '';
+          gpt_data += `<div class="chat-message chat-message-bot">
+            <div class="d-flex gap-3 py-3">
+              <p class="mb-0">${data}</p>
+            </div>
+          </div>`;
+
+          $("#chat-messages").append(gpt_data);
+          $("#chat-messages").scrollTop($("#chat-messages")[0].scrollHeight);
+        }
+      });
+    });
+
+    $("#close-btn").click(function () {
+      $("#chat-container").hide();
+      $("#open-chat-btn").show();
+    });
+
+    $("#open-chat-btn").click(function () {
+      $("#chat-container").show();
+      $("#open-chat-btn").hide();
+    });
+  </script>
+</body>
+
+</html>
